@@ -3,7 +3,9 @@ from pyLRT import RadTran, get_lrt_folder
 import matplotlib.pyplot as plt
 import numpy as np
 
-tlrt = RadTran(get_lrt_folder())
+LIBRADTRAN_FOLDER = get_lrt_folder()
+
+tlrt = RadTran(LIBRADTRAN_FOLDER)
 tlrt.options['rte_solver'] = 'disort'
 tlrt.options['source'] = 'thermal'
 tlrt.options['output_user'] = 'p edir edn eup'
