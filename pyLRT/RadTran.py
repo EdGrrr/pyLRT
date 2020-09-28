@@ -218,7 +218,7 @@ def _read_verbose(f, regrid=False):
     gases = _read_table(f, '*** setup_gases', gaslabels, wavelengths, regrid=regrid)
     redist = _read_table(f, '*** setup_redistribute', redistlabels, wavelengths, regrid=regrid)
     optprop = _read_table(f, '*** optical_properties',
-                         optproplabels, wavelengths, regrid=regrid)
+                          optproplabels, wavelengths, regrid=regrid)
 
     return {'wavelengths': wavelengths,
             'profiles': profiles,
@@ -241,15 +241,3 @@ def _map_to_outputwvl(data, wavelengths):
     return opdata
 
 
-def _planck_function(temperature, wavelength=None, frequency=None, wavenumber=None):
-    '''wavelength in m, frequency in Hz, wavenumber in m-1'''
-    import scipy.constants
-    h = scipy.constants.h
-    c = scipy.constants.c
-    kb = scipy.constants.Boltzmann
-    if wavelength is not None:
-        return ((2*h*c**2)/(wavelength**5))*(1/(np.exp(h*c/(kb*temperature*wavelength))-1))
-    elif frequency is not None:
-        return ((2*h*frequency**3)/(c**2))*(1/(np.exp(h*frequency/(kb*temperature))-1))
-    elif wavenumber is not None:
-        return ((2*h*c**2*wavenumber**3))*(1/(np.exp(h*c*wavenumber/(kb*temperature))-1))
