@@ -119,4 +119,5 @@ plt.text(0.1, 0.4,
 
 fig = plt.gcf()
 fig.set_size_inches(5, 4)
-plt.show()
+fig.savefig('output/nk90_plot.pdf', bbox_inches='tight')
+
