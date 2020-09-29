@@ -1,7 +1,7 @@
 from setuptools import setup
 
 setup(name='pyLRT',
-      version='0.1',
+      version='0.2',
       author='Edward Gryspeerdt',
       author_email='e.gryspeerdt@imperial.ac.uk',
       maintainer='Edward Gryspeerdt',
