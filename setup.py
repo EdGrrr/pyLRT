@@ -11,5 +11,7 @@ setup(name='pyLRT',
       url='https://github.com/EdGrrr/pyLRT',
       install_requires=['xarray',
                         'numpy',
-                        'scipy'],
+                        'scipy',
+                        'netCDF4',
+                        'matplotlib'],
       packages=['pyLRT'],)
