@@ -40,3 +40,21 @@ Usage
    output = slrt.run(verbose=True)
  
 For more advanced examples, please see the examples directory.
+
+Example plots
+=============
+
+.. figure:: cloud_temp.png
+   :width: 400px
+   :align: center
+   :alt: The impact of a cloud layer on the TOA radiance
+
+   The impact of a cloud layer on top of atmosphere radiance, together with the Planck function at a selection of temperatures
+
+
+.. figure:: as_complete.png
+   :width: 400px
+   :align: center
+   :alt: Atmospheric absorption as a function of component and wavelength
+
+   Atmospheric absorption as a function of component and wavelength, created using the verbose output from LibRadTran
