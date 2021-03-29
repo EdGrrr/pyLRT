@@ -62,11 +62,11 @@ class RadTran():
         os.chdir(os.path.join(self.folder, 'bin'))
 
         if verbose:
-            process = subprocess.run(['uvspec'], stdout=subprocess.PIPE,
+            process = subprocess.run([os.getcwd()+'/uvspec'], stdout=subprocess.PIPE,
                                      stderr=subprocess.PIPE,
                                      input=inputstr, encoding='ascii')
         else:
-            process = subprocess.run(['uvspec'], stdout=subprocess.PIPE,
+            process = subprocess.run([os.getcwd()+'/uvspec'], stdout=subprocess.PIPE,
                                      input=inputstr, encoding='ascii')
         os.chdir(cwd)
 
