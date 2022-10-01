@@ -22,13 +22,14 @@ class RadTran():
         self.options = {}
         self.cloud = None
 
-    def run(self, verbose=False, print_input=False, print_output=False, regrid=True):
+    def run(self, verbose=False, print_input=False, print_output=False, regrid=True, quiet=False):
         '''Run the radiative transfer code
         - verbose - retrieves the output from a verbose run, including atmospheric
                     structure and molecular absorption
         - print_input - print the input file used to run libradtran
         - print_output - echo the output
-        - regrid - converts verbose output to the regrid/output grid, best to leave as True'''
+        - regrid - converts verbose output to the regrid/output grid, best to leave as True
+        - quiet - if True, do not print UVSPEC warnings'''
         if self.cloud:  # Create cloud file
             tmpcloud = tempfile.NamedTemporaryFile(delete=False)
             cloudstr = '\n'.join([
@@ -61,18 +62,30 @@ class RadTran():
         cwd = os.getcwd()
         os.chdir(os.path.join(self.folder, 'bin'))
 
-        if verbose:
-            process = subprocess.run([os.getcwd()+'/uvspec'], stdout=subprocess.PIPE,
-                                     stderr=subprocess.PIPE,
-                                     input=inputstr, encoding='ascii')
-        else:
-            process = subprocess.run([os.getcwd()+'/uvspec'], stdout=subprocess.PIPE,
-                                     input=inputstr, encoding='ascii')
+        process = subprocess.run([os.getcwd()+'/uvspec'], stdout=subprocess.PIPE,
+                                 stderr=subprocess.PIPE,
+                                 input=inputstr, encoding='ascii')
         os.chdir(cwd)
 
         if self.cloud:
             os.remove(tmpcloud.name)
             del(self.options['wc_file 1D'])
+
+        # Check uvspec output for errors/warnings
+        if not quiet:
+            print_flag = False
+            for line in io.StringIO(process.stderr):
+                if line.startswith('*** Warning'):
+                    # Some uvspec warnings start with three stars
+                    # These have three stars for every line
+                    print(line.strip())
+                elif line.startswith('*****'):
+                    # Many uvspec warnings are in a star box
+                    print(line.strip())
+                    print_flag = not(print_flag)
+                elif print_flag:
+                    # Print line if we are within a star box
+                    print(line.strip())
 
         #Check for errors!
         error = ['UVSpec Error Message:\n']
