@@ -166,10 +166,10 @@ class RadTran():
         elif type=="ice":
             cloudstr = '\n'.join([
                 ' {:4.2f} {:2.4f} {:4.2f}'.format(
-                    self.cloud['z'][alt],
-                    self.cloud['iwc'][alt],
-                    self.cloud['re'][alt])
-                for alt in range(len(self.cloud['z']))])
+                    self.ice_cloud['z'][alt],
+                    self.ice_cloud['iwc'][alt],
+                    self.ice_cloud['re'][alt])
+                for alt in range(len(self.ice_cloud['z']))])
             tmpfile.write(cloudstr.encode('ascii'))
             tmpfile.close()
             self.options['ic_file 1D'] = tmpfile.name
