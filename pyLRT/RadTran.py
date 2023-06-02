@@ -21,6 +21,7 @@ class RadTran():
         self.folder = folder
         self.options = {}
         self.cloud = None
+        self.ice_cloud = None
 
     def run(self, verbose=False, print_input=False, print_output=False, regrid=True, quiet=False):
         '''Run the radiative transfer code
@@ -31,17 +32,10 @@ class RadTran():
         - regrid - converts verbose output to the regrid/output grid, best to leave as True
         - quiet - if True, do not print UVSPEC warnings'''
         if self.cloud:  # Create cloud file
-            tmpcloud = tempfile.NamedTemporaryFile(delete=False)
-            cloudstr = '\n'.join([
-                ' {:4.2f} {:4.2f} {:4.2f}'.format(
-                    self.cloud['z'][alt],
-                    self.cloud['lwc'][alt],
-                    self.cloud['re'][alt])
-                for alt in range(len(self.cloud['lwc']))])
-            tmpcloud.write(cloudstr.encode('ascii'))
-            tmpcloud.close()
-            self.options['wc_file 1D'] = tmpcloud.name
-
+            tmpcloud = self._cloud_input(type="liquid", print_input=print_input)
+        if self.ice_cloud:  # Create ice cloud file
+            tmpicecloud = self._cloud_input(type="ice", print_input=print_input)
+        
         if verbose:
             try:
                 del(self.options['quiet'])
@@ -53,10 +47,6 @@ class RadTran():
                               for name in self.options.keys()])
         if print_input:
             print(inputstr)
-            if self.cloud:
-                print('Cloud')
-                print('  Alt  LWC   Re')
-                print(cloudstr)
             print('')
 
         cwd = os.getcwd()
@@ -70,6 +60,9 @@ class RadTran():
         if self.cloud:
             os.remove(tmpcloud.name)
             del(self.options['wc_file 1D'])
+        if self.ice_cloud:
+            os.remove(tmpicecloud.name)
+            del(self.options['ic_file 1D'])
 
         # Check uvspec output for errors/warnings
         if not quiet:
@@ -112,7 +105,79 @@ class RadTran():
             return (np.genfromtxt(io.StringIO(process.stdout)),
                     _read_verbose(io.StringIO(process.stderr), regrid=regrid))
         return np.genfromtxt(io.StringIO(process.stdout))
+    
+    def add_cloud(
+        self, type="liquid", height=None, base_height=None, thickness=None, 
+        lwc=None, iwc=None, re=None, od=None
+    ):
+        '''Add a cloud layer'''
+        if height is None:
+            raise ValueError("height must be provided")
+        if base_height is None:
+            if thickness is None:
+                raise ValueError("thickness must be provided")
+            else:
+                base_height = height-thickness
+        if re is None:
+            raise ValueError("re must be provided")
+        if lwc is not None:
+            type = "liquid"
+        if iwc is not None:
+            type = "ice"
+        if od is not None:
+            # Convert OD to CWP: cwp in g/m2, re in microns
+            cwp = 2/3 * od * re * 1e-3
+            if type=="liquid":
+                lwc = cwp
+            elif type=="ice":
+                iwc = cwp
+        
+        if type=="liquid":
+            self.cloud = {
+                "z":[height,base_height],
+                "lwc":[0,lwc],
+                "re":[0,re],
+            }
+        if type=="ice":
+            self.ice_cloud = {
+                "z":[height,base_height],
+                "iwc":[0,iwc],
+                "re":[0,re],
+            }
+        
 
+    def _cloud_input(self, type="liquid", print_input=False):
+        '''Process a cloud to the input format required for LRT'''
+        tmpfile = tempfile.NamedTemporaryFile(delete=False)
+        if type=="liquid":
+            cloudstr = '\n'.join([
+                ' {:4.2f} {:2.4f} {:4.2f}'.format(
+                    self.cloud['z'][alt],
+                    self.cloud['lwc'][alt],
+                    self.cloud['re'][alt])
+                for alt in range(len(self.cloud['z']))])
+            tmpfile.write(cloudstr.encode('ascii'))
+            tmpfile.close()
+            self.options['wc_file 1D'] = tmpfile.name
+            if print_input:
+                print('Liquid Cloud')
+                print('  Alt  LWC   Re')
+                print(cloudstr)
+        elif type=="ice":
+            cloudstr = '\n'.join([
+                ' {:4.2f} {:2.4f} {:4.2f}'.format(
+                    self.cloud['z'][alt],
+                    self.cloud['iwc'][alt],
+                    self.cloud['re'][alt])
+                for alt in range(len(self.cloud['z']))])
+            tmpfile.write(cloudstr.encode('ascii'))
+            tmpfile.close()
+            self.options['ic_file 1D'] = tmpfile.name
+            if print_input:
+                print('Ice Cloud')
+                print('  Alt  IWC   Re')
+                print(cloudstr)
+        return tmpfile
 
 def _skiplines(f, n):
     '''Skip n lines from file f'''
