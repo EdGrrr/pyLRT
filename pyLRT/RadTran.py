@@ -1,3 +1,4 @@
+import warnings
 import numpy as np
 import subprocess
 import io
@@ -150,12 +151,7 @@ class RadTran():
         '''Process a cloud to the input format required for LRT'''
         tmpfile = tempfile.NamedTemporaryFile(delete=False)
         if type=="liquid":
-            cloudstr = '\n'.join([
-                ' {:4.2f} {:2.4f} {:4.2f}'.format(
-                    self.cloud['z'][alt],
-                    self.cloud['lwc'][alt],
-                    self.cloud['re'][alt])
-                for alt in range(len(self.cloud['z']))])
+            cloudstr = format_cloudstr(self.cloud['z'], self.cloud['lwc'], self.cloud['re'])
             tmpfile.write(cloudstr.encode('ascii'))
             tmpfile.close()
             self.options['wc_file 1D'] = tmpfile.name
@@ -164,12 +160,7 @@ class RadTran():
                 print('  Alt  LWC   Re')
                 print(cloudstr)
         elif type=="ice":
-            cloudstr = '\n'.join([
-                ' {:4.2f} {:2.4f} {:4.2f}'.format(
-                    self.ice_cloud['z'][alt],
-                    self.ice_cloud['iwc'][alt],
-                    self.ice_cloud['re'][alt])
-                for alt in range(len(self.ice_cloud['z']))])
+            cloudstr = format_cloudstr(self.ice_cloud['z'], self.ice_cloud['iwc'], self.ice_cloud['re'])
             tmpfile.write(cloudstr.encode('ascii'))
             tmpfile.close()
             self.options['ic_file 1D'] = tmpfile.name
@@ -178,6 +169,45 @@ class RadTran():
                 print('  Alt  IWC   Re')
                 print(cloudstr)
         return tmpfile
+
+def format_cloudstr(z, cwc, re):
+    """Format a string representation of cloud properties to save to file"""
+    cloudstr = '\n'.join([
+        f' {_autoformat(z[alt])} {_autoformat(cwc[alt])} {_autoformat(re[alt])}'
+        for alt in range(len(z))
+    ])
+    return cloudstr
+
+def _autoformat(value, maxchar=7, require_point=True):
+    """Format a numeric value to a string with a limited number of charachers"""
+    if require_point:
+        maxint = maxchar-2
+    else:
+        maxint = maxchar
+    if value > 0:
+        value_sig_figs = int(np.floor(np.log10(value))) + 1
+    else:
+        value_sig_figs=1
+    if value_sig_figs > maxint:
+        warnings.warn("Value too large to format")
+        value = 10**maxint - 1
+        intchars = maxint
+    elif value_sig_figs <= (2-maxchar):
+        warnings.warn("Value too small to format")
+        value = 10**(2-maxchar)
+        intchars = 1
+    else:
+        intchars = value_sig_figs if value_sig_figs >= 1 else 1
+    if intchars < maxchar-2:
+        decchars = maxchar-intchars-1
+        value_str = f'{{:.{decchars}f}}'.format(value)
+    else:
+        value_str = f'{{:.{0}f}}'.format(value).split(".")[0]
+    if require_point and "." not in value_str:
+        value_str = value_str + ".0"
+    if len(value_str) > maxchar:
+        raise RuntimeError("Result too long!")
+    return value_str
 
 def _skiplines(f, n):
     '''Skip n lines from file f'''
