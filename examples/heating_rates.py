@@ -37,8 +37,8 @@ tdata, tverb = tlrt.run(verbose=True)
 # Plot the radaitive heating rates on a symmetric log colourscale #
 ###################################################################
 toplot = tdata[:, 2].reshape((-1, len(output_layers))).transpose()[::-1]
-plt.imshow(toplot, cmap=plt.get_cmap('RdBu_r'), vmin=-0.2, vmax=0.2,
-           norm=matplotlib.colors.SymLogNorm(linthresh=0.0001),
+plt.imshow(toplot, cmap=plt.get_cmap('RdBu_r'), 
+           norm=matplotlib.colors.SymLogNorm(linthresh=0.0001, vmin=-0.2, vmax=0.2,),
            aspect='auto')
 wvl = tdata[:, 0]
 wvlticks = np.array([5000, 10000, 15000, 20000, 30000, 50000, 70000])
@@ -68,8 +68,8 @@ trans_ticks = [[0, 0.5, 1], [0, 50, 100]]
 
 plt.subplot(211)
 toplot = tdata[:, 2].reshape((-1, len(output_layers))).transpose()[::-1]
-plt.imshow(toplot, cmap=plt.get_cmap('RdBu_r'), vmin=-0.2, vmax=0.2,
-           norm=matplotlib.colors.SymLogNorm(linthresh=0.0001),
+plt.imshow(toplot, cmap=plt.get_cmap('RdBu_r'),
+           norm=matplotlib.colors.SymLogNorm(linthresh=0.0001, vmin=-0.2, vmax=0.2),
            aspect='auto')
 wvl = tdata[:, 0]
 wvlticks = np.array([5000, 10000, 15000, 20000, 30000, 50000, 70000])
