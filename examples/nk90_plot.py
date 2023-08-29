@@ -55,69 +55,69 @@ def get_refl(inputs):
         outputs.append(rtm.run())
     return outputs
 
+if __name__ == '__main__':
+    grid_axes = ['re', 'tau', 'satz', 'solz', 'raz']
+    bands = banddata
+    output = np.zeros([len(bands)]+[len(vals[n]) for n in grid_axes])*np.nan
+
+    # Cloud constants
+    ctt = 280
+    dz = 500
+    f_ad = 1
+    rho_w = 1e6  # Density of water in gm-3
+    const_A = 2/3 * rho_w * f_ad * 1e-6
+    const_B = 1.67e4 * (0.0192*ctt-4.293)
+
+    total = len(vals['re'])*len(vals['tau'])*len(vals['solz'])
+
+    # Build the input array
+    tasks = []
+    for reind, re in enumerate(vals['re']):
+        print('Re: {:6.2f}'.format(re))
+        for tauind, tau in enumerate(vals['tau']):
+            # We are working in re-tau space so have to calculate lwc
+            # Using a constant LWC profile
+            lwc = const_A * tau * re/dz
+            if ((re>60) or (re<2.5)) and (lwc>0):
+                continue
+            cloud = {'z':   [1.0, 1-dz/1000],
+                    'lwc': [0.0, lwc],
+                    're':  [re, re]}
+            for solzind, solz in enumerate(vals['solz']):
+                totalind = (reind*len(vals['tau'])*len(vals['solz'])+
+                            tauind*len(vals['solz']) +
+                            solzind)
+                tasks.append([bands, reind, tauind, solzind, cloud, solz, totalind])
+
+    # Run the radiative transfer
+    pool = Pool(8)
+    opmap = pool.map(get_refl, tasks, chunksize=1)
+
+    # Reshape the output to match the input data arrays
+    for op in opmap:
+        output[0, op[0], op[1], :, op[2]] = op[3].reshape((len(vals['satz']), len(vals['raz'])))
+        output[1, op[0], op[1], :, op[2]] = op[4].reshape((len(vals['satz']), len(vals['raz'])))
+
+    # Plot the reflection values with warped grid
+    for i in range(output.shape[1]):
+        plt.plot(output[1, i].ravel(), output[0, i].ravel(), c='k')
+        plt.text(output[1, i, -1, 0, 0]+0.02, output[0, i, -1, 0, 0], r'r$_e$='+'{}'.format(vals['re'][i])+r'$\mu$m', va='center')
+
+    for i in range(output.shape[2]):
+        plt.plot(output[1, :, i].ravel(), output[0, :, i].ravel(), c='k')
+        plt.text(output[1, -1, i, 0, 0], output[0, -1, i, 0, 0]-0.01, r'$\tau_c$='+'{}'.format(vals['tau'][i]), ha='center', va='top', rotation=90)
         
-grid_axes = ['re', 'tau', 'satz', 'solz', 'raz']
-bands = banddata
-output = np.zeros([len(bands)]+[len(vals[n]) for n in grid_axes])*np.nan
+    plt.xlabel('Reflection Function MODIS Ch2 (0.86$\mu$m)')
+    plt.ylabel('Reflection Function MODIS Ch7 (2.1$\mu$m)')
+    plt.xlim(0, 1.1)
+    plt.ylim(-0.06, 0.6)
 
-# Cloud constants
-ctt = 280
-dz = 500
-f_ad = 1
-rho_w = 1e6  # Density of water in gm-3
-const_A = 2/3 * rho_w * f_ad * 1e-6
-const_B = 1.67e4 * (0.0192*ctt-4.293)
+    plt.text(0.1, 0.4,
+            r'$\theta_0$'+' = {:.0f}'.format(vals['solz'][0])+r'$^{\circ}$'+'\n'+
+            r'$\theta$'+' = {:.0f}'.format(np.rad2deg(vals['satz'][0]))+r'$^{\circ}$'+'\n'+
+            r'$\Delta\phi$'+' = {:.0f}'.format(vals['raz'][0])+r'$^{\circ}$')
 
-total = len(vals['re'])*len(vals['tau'])*len(vals['solz'])
-
-# Build the input array
-tasks = []
-for reind, re in enumerate(vals['re']):
-    print('Re: {:6.2f}'.format(re))
-    for tauind, tau in enumerate(vals['tau']):
-        # We are working in re-tau space so have to calculate lwc
-        # Using a constant LWC profile
-        lwc = const_A * tau * re/dz
-        if ((re>60) or (re<2.5)) and (lwc>0):
-            continue
-        cloud = {'z':   [1.0, 1-dz/1000],
-                 'lwc': [0.0, lwc],
-                 're':  [re, re]}
-        for solzind, solz in enumerate(vals['solz']):
-            totalind = (reind*len(vals['tau'])*len(vals['solz'])+
-                        tauind*len(vals['solz']) +
-                        solzind)
-            tasks.append([bands, reind, tauind, solzind, cloud, solz, totalind])
-
-# Run the radiative transfer
-pool = Pool(8)
-opmap = pool.map(get_refl, tasks, chunksize=1)
-
-# Reshape the output to match the input data arrays
-for op in opmap:
-    output[0, op[0], op[1], :, op[2]] = op[3].reshape((len(vals['satz']), len(vals['raz'])))
-    output[1, op[0], op[1], :, op[2]] = op[4].reshape((len(vals['satz']), len(vals['raz'])))
-
-# Plot the reflection values with warped grid
-for i in range(output.shape[1]):
-    plt.plot(output[1, i].ravel(), output[0, i].ravel(), c='k')
-    plt.text(output[1, i, -1, 0, 0]+0.02, output[0, i, -1, 0, 0], r'r$_e$='+'{}'.format(vals['re'][i])+r'$\mu$m', va='center')
-
-for i in range(output.shape[2]):
-    plt.plot(output[1, :, i].ravel(), output[0, :, i].ravel(), c='k')
-    plt.text(output[1, -1, i, 0, 0], output[0, -1, i, 0, 0]-0.01, r'$\tau_c$='+'{}'.format(vals['tau'][i]), ha='center', va='top', rotation=90)
-    
-plt.xlabel('Reflection Function MODIS Ch2 (0.86$\mu$m)')
-plt.ylabel('Reflection Function MODIS Ch7 (2.1$\mu$m)')
-plt.xlim(0, 1.1)
-plt.ylim(-0.06, 0.6)
-
-plt.text(0.1, 0.4,
-         r'$\theta_0$'+' = {:.0f}'.format(vals['solz'][0])+r'$^{\circ}$'+'\n'+
-         r'$\theta$'+' = {:.0f}'.format(np.rad2deg(vals['satz'][0]))+r'$^{\circ}$'+'\n'+
-         r'$\Delta\phi$'+' = {:.0f}'.format(vals['raz'][0])+r'$^{\circ}$')
-
-fig = plt.gcf()
-fig.set_size_inches(5, 4)
-fig.savefig('output/nk90_plot.pdf', bbox_inches='tight')
+    fig = plt.gcf()
+    fig.set_size_inches(5, 4)
+    fig.savefig('output/nk90_plot.pdf', bbox_inches='tight')
 
