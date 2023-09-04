@@ -5,6 +5,7 @@ import os
 import tempfile
 import xarray as xr
 
+from .parser import parse_output
 
 class RadTran():
     '''The base class for handling a LibRadTran instance.
@@ -22,7 +23,7 @@ class RadTran():
         self.options = {}
         self.cloud = None
 
-    def run(self, verbose=False, print_input=False, print_output=False, regrid=True, quiet=False):
+    def run(self, verbose=False, print_input=False, print_output=False, regrid=True, quiet=False, parse=False, **parse_kwargs):
         '''Run the radiative transfer code
         - verbose - retrieves the output from a verbose run, including atmospheric
                     structure and molecular absorption
@@ -99,6 +100,10 @@ class RadTran():
             error = ''.join(error)
             raise ValueError(error)
 
+        output_data = np.genfromtxt(io.StringIO(process.stdout))
+        if parse:
+            output_data = self._parse_output(process.stdout, **parse_kwargs)
+
         if print_output:
             print('Output file:')
             print(process.stdout)
@@ -109,9 +114,13 @@ class RadTran():
                 pass
             self.options['quiet'] = ''
 
-            return (np.genfromtxt(io.StringIO(process.stdout)),
+            return (output_data,
                     _read_verbose(io.StringIO(process.stderr), regrid=regrid))
-        return np.genfromtxt(io.StringIO(process.stdout))
+        return output_data
+
+
+    def _parse_output(self, output, dims=None, dim_specs=None):
+        return parse_output(output, self, dims=dims, dim_specs=dim_specs)
 
 
 def _skiplines(f, n):
