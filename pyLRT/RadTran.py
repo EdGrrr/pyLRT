@@ -110,7 +110,7 @@ class RadTran():
 
         output_data = np.genfromtxt(io.StringIO(process.stdout))
         if parse:
-            output_data = self._parse_output(process.stdout, **parse_kwargs)
+            output_data = self._parse_output(output_data, **parse_kwargs)
 
         if print_output:
             print('Output file:')
