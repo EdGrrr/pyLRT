@@ -39,7 +39,8 @@ def parse_output(output: ArrayLike, rt:RadTran, dims=["lambda"], **dim_specs):
     if "lambda" in dim_values:
         dim_values["wvl"] = dim_values["lambda"]
         del(dim_values["lambda"])
-
+        dims[dims.index("lambda")] = "wvl"
+        
     output_dataset = xr.DataArray(output, coords={**dim_values, "variable":output_cols}, dims=["variable"]+dims)
     output_dataset = output_dataset.to_dataset("variable")
 
