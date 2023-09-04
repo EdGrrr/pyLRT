@@ -1,3 +1,4 @@
+from ast import parse
 import numpy as np
 import subprocess
 import io
@@ -30,7 +31,14 @@ class RadTran():
         - print_input - print the input file used to run libradtran
         - print_output - echo the output
         - regrid - converts verbose output to the regrid/output grid, best to leave as True
-        - quiet - if True, do not print UVSPEC warnings'''
+        - quiet - if True, do not print UVSPEC warnings
+        - parse - if True, parse the output into an xarray dataset.
+        - parse_kwargs - keyword arguments to pass to the parse_output function
+            - dims - a list of dimensions to use for the output (ordered).
+                     Default is ['lambda'].
+            - dim_specs - a dictionary of values for dimensions whose values are not
+                          in the output, e.g. {'zout': [0, 5, 120]}.
+        '''
         if self.cloud:  # Create cloud file
             tmpcloud = tempfile.NamedTemporaryFile(delete=False)
             cloudstr = '\n'.join([
@@ -119,8 +127,8 @@ class RadTran():
         return output_data
 
 
-    def _parse_output(self, output, dims=None, dim_specs=None):
-        return parse_output(output, self, dims=dims, dim_specs=dim_specs)
+    def _parse_output(self, output, **parse_kwargs):
+        return parse_output(output, self, **parse_kwargs)
 
 
 def _skiplines(f, n):
