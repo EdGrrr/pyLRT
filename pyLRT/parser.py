@@ -105,7 +105,7 @@ def _unstack_dims(output, output_cols, dims, **dim_specs):
     # check the reshape is correct
     for dim in dims:
         if dim not in output_cols: # are dim values in output?
-            print("Warning: dimension {dim} values are not in output; cannot check for consistency.")
+            print(f"Warning: dimension {dim} values are not in output; cannot check for consistency.")
             continue
 
         # check coordinates don't vary along non-dim axis
