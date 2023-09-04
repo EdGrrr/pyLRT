@@ -19,7 +19,8 @@ def parse_output(output: ArrayLike, rt:RadTran, dims=["lambda"], **dim_specs):
     rt : RadTran
         The RadTran object used to run the simulation
     dims : list, optional
-        The dimensions to unstack the output along, by default ["lambda"]
+        The dimensions to unstack the output along, by default ["lambda"].
+        Note that "lambda" is renamed to "wvl" in the output dataset.
     dim_specs : dict, optional
         The values of the dimensions to unstack the output along who are
         not included in the output of the libRadtran run, by default {}
@@ -33,6 +34,11 @@ def parse_output(output: ArrayLike, rt:RadTran, dims=["lambda"], **dim_specs):
 
     output_cols = _get_columns(rt)
     output, dim_values = _unstack_dims(output, output_cols, dims, **dim_specs)
+
+    # avoid calling wavelength "lambda", as it is a reserved word in python
+    if "lambda" in dim_values:
+        dim_values["wvl"] = dim_values["lambda"]
+        del(dim_values["lambda"])
 
     output_dataset = xr.DataArray(output, coords={**dim_values, "variable":output_cols}, dims=["variable"]+dims)
     output_dataset = output_dataset.to_dataset("variable")

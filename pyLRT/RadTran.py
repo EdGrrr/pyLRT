@@ -35,9 +35,10 @@ class RadTran():
         - parse - if True, parse the output into an xarray dataset.
         - parse_kwargs - keyword arguments to pass to the parse_output function
             - dims - a list of dimensions to use for the output (ordered).
-                     Default is ['lambda'].
-            - dim_specs - a dictionary of values for dimensions whose values are not
-                          in the output, e.g. {'zout': [0, 5, 120]}.
+                     Default is ['lambda']. Note that 'lambda' is renamed to 'wvl'
+                     in the output dataset.
+            - **dim_specs - kwarg values for dimensions whose values are not
+                          in the output, e.g. including zout=[0,5,120].
         '''
         if self.cloud:  # Create cloud file
             tmpcloud = tempfile.NamedTemporaryFile(delete=False)
