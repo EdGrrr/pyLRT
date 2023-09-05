@@ -148,3 +148,14 @@ def _promote_uu_directions(output_dataset, rt):
         output_dataset = output_dataset.assign_coords(phi=phi_vals)
 
     return output_dataset
+
+
+def _remove_dims(da):
+    """Remove dims from dataarray where values are uniform"""
+    for dim in da.dims:
+        dim_index = da.dims.index(dim)
+        unique_values = np.unique(da.data, axis=da.dims.index(dim))
+        if unique_values.shape[dim_index] == 1:
+            # Constant along this dimension
+            da = da.isel(**{dim:0}, drop=True)
+    return da
