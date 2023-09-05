@@ -42,14 +42,17 @@ def parse_output(output: ArrayLike, rt:RadTran, dims=["lambda"], **dim_specs):
         dims[dims.index("lambda")] = "wvl"
         output_cols[output_cols.index("lambda")] = "wvl"
         
-    output_dataset = xr.DataArray(output, coords={**dim_values, "variable":output_cols}, dims=["variable"]+dims)
-    output_dataset = output_dataset.to_dataset("variable")
+    ds_output = xr.DataArray(output, coords={**dim_values, "variable":output_cols}, dims=["variable"]+dims)
+    ds_output = ds_output.to_dataset("variable")
 
     # Check for directional quantities (radiances)
-    if np.any(["uu" in col for col in output_dataset.data_vars]):
-        output_dataset = _promote_uu_directions(output_dataset, rt)
+    if np.any(["uu" in col for col in ds_output.data_vars]):
+        ds_output = _promote_uu_directions(ds_output, rt)
 
-    return output_dataset.squeeze()
+    for data_var in ds_output.data_vars:
+        ds_output[data_var] = _remove_dims(ds_output[data_var])
+
+    return ds_output
 
 
 def _get_columns(rt: RadTran):
@@ -122,33 +125,33 @@ def _unstack_dims(output, output_cols, dims, **dim_specs):
 
     return output, dim_values
 
-def _promote_uu_directions(output_dataset, rt):
+def _promote_uu_directions(ds_output, rt):
     """Combine uu to a data_var and promote umu and phi to dims."""
     # Promoting phi to a dimension
-    uu_cols = [col for col in output_dataset.data_vars if "uu" in col]
+    uu_cols = [col for col in ds_output.data_vars if "uu" in col]
     n_umu = len(rt.options.get("umu", "1.0").split())
     for i_umu in range(n_umu):
         umu_cols = [col for col in uu_cols if f"umu({i_umu})" in col]
-        da = xr.concat([output_dataset[col] for col in umu_cols], "phi")
+        da = xr.concat([ds_output[col] for col in umu_cols], "phi")
         da.name = f"uu(umu({i_umu}))"
-        output_dataset = xr.merge([output_dataset, da])
-    output_dataset = output_dataset.drop_vars(uu_cols)
+        ds_output = xr.merge([ds_output, da])
+    ds_output = ds_output.drop_vars(uu_cols)
     # Promoting umu to a dimension
-    uu_cols = [col for col in output_dataset.data_vars if "uu" in col]
-    da = xr.concat([output_dataset[col] for col in uu_cols], "umu")
+    uu_cols = [col for col in ds_output.data_vars if "uu" in col]
+    da = xr.concat([ds_output[col] for col in uu_cols], "umu")
     da.name = "uu"
-    output_dataset = xr.merge([output_dataset, da])
-    output_dataset = output_dataset.drop_vars(uu_cols)
+    ds_output = xr.merge([ds_output, da])
+    ds_output = ds_output.drop_vars(uu_cols)
 
     # Add umu and phi coordinates based on input
     if "umu" in rt.options:
         umu_vals = np.array(rt.options["umu"].split(), dtype=float)
-        output_dataset = output_dataset.assign_coords(umu=umu_vals)
+        ds_output = ds_output.assign_coords(umu=umu_vals)
     if "phi" in rt.options:
         phi_vals = np.array(rt.options["phi"].split(), dtype=float)
-        output_dataset = output_dataset.assign_coords(phi=phi_vals)
+        ds_output = ds_output.assign_coords(phi=phi_vals)
 
-    return output_dataset
+    return ds_output
 
 
 def _remove_dims(da):
