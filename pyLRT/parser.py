@@ -59,9 +59,9 @@ def _get_columns(rt: RadTran):
     """Get the column names for the output of a libRadtran run"""
     try:
         solver = rt.options.get("rte_solver", "disort")
-        output_cols = rt.options.get("output_user", default_output[rt.options["rte_solver"]]).split()
+        output_cols = rt.options.get("output_user", default_output[solver]).split()
     except KeyError:
-        raise NotImplementedError(f"rte_solver {solver} output parsing is implemented")
+        raise NotImplementedError(f"rte_solver {solver} output parsing not implemented")
 
     # Add extra columns for directional radiances
     # get the number of umu and phi
