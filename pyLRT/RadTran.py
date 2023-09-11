@@ -6,7 +6,7 @@ import os
 import tempfile
 import xarray as xr
 
-from .parser import parse_output
+from .parser import OutputParser, parse_output
 
 class RadTran():
     '''The base class for handling a LibRadTran instance.
@@ -17,12 +17,13 @@ class RadTran():
 
     Set the verbose option to retrieve the verbose output from UVSPEC.'''
 
-    def __init__(self, folder):
+    def __init__(self, folder, output_parser=None):
         '''Create a radiative transfer object.
         folder - the folder where libradtran was compiled/installed'''
         self.folder = folder
         self.options = {}
         self.cloud = None
+        self.parser = output_parser 
 
     def run(self, verbose=False, print_input=False, print_output=False, regrid=True, quiet=False, parse=False, **parse_kwargs):
         '''Run the radiative transfer code
@@ -128,8 +129,17 @@ class RadTran():
         return output_data
 
 
-    def _parse_output(self, output, **parse_kwargs):
-        return parse_output(output, self, **parse_kwargs)
+    def _parse_output(self, output, parser=None, **parse_kwargs):
+        if self.parser is None and parser is not None and parse_kwargs == {}:
+            self.parser = parser
+        elif self.parser is None:
+            self.parser = OutputParser(**parse_kwargs)
+        elif self.parser is not None and (parser is not None or parse_kwargs != {}):
+            raise ValueError("Parser already set. Cannot set again.")
+        elif parser is not None and parse_kwargs != {}:
+            raise ValueError("Cannot simultaneously pass parser and parse_kwargs.")
+        
+        return self.parser.parse_output(output, self)
 
 
 def _skiplines(f, n):

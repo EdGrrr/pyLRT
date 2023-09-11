@@ -41,10 +41,10 @@ tlrt_cld.cloud = {'z': np.array([4, 3.7]),
 # Run the RT
 print('Initial RT')
 sdata, sverb = slrt.run(verbose=True, parse=True, dims=['lambda','zout'], zout=[0, 5, 120])
-tdata, tverb = tlrt.run(verbose=True, parse=True, dims=['lambda','zout'], zout=[0, 5, 120])
+tdata, tverb = tlrt.run(verbose=True, parse=True, parser=slrt.parser)
 print('Cloud RT')
-tcdata, tcverb = tlrt_cld.run(verbose=True, parse=True, dims=['lambda','zout'], zout=[0, 5, 120])
-scdata, scverb = slrt_cld.run(verbose=True, parse=True, dims=['lambda','zout'], zout=[0, 5, 120])
+tcdata, tcverb = tlrt_cld.run(verbose=True, parse=True, parser=slrt.parser)
+scdata, scverb = slrt_cld.run(verbose=True, parse=True, parser=slrt.parser)
 print('Done RT')
 
 tclearsurf = scipy.interpolate.interp1d(np.log(tdata.sel(zout=0).wvl), tdata.sel(zout=0).eup)
