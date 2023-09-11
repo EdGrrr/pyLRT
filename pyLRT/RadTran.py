@@ -6,7 +6,7 @@ import os
 import tempfile
 import xarray as xr
 
-from .parser import OutputParser, parse_output
+from .parser import OutputParser
 
 class RadTran():
     '''The base class for handling a LibRadTran instance.
