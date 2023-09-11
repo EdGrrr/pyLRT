@@ -39,16 +39,14 @@ class OutputParser:
         """
 
 
-        output_cols = _get_columns(rt)
-        output, dim_values = self._unstack_dims(output, output_cols)
-
-        # avoid calling wavelength "lambda", as it is a reserved word in python
-        if "lambda" in dim_values:
-            dim_values["wvl"] = dim_values["lambda"]
-            del(dim_values["lambda"])
+        output_cols = _get_columns(rt)# avoid calling wavelength "lambda", as it is a reserved word in python
+        if "lambda" in self.dims:
             self.dims[self.dims.index("lambda")] = "wvl"
+        if "lambda" in output_cols:
             output_cols[output_cols.index("lambda")] = "wvl"
             
+        output, dim_values = self._unstack_dims(output, output_cols)
+
         ds_output = xr.DataArray(output, coords={**dim_values, "variable":output_cols}, dims=["variable"]+self.dims)
         ds_output = ds_output.to_dataset("variable")
 
