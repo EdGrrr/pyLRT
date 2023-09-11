@@ -21,7 +21,7 @@ tdata, tverb = tlrt.run(verbose=True, parse=True, dims=['p'])
 
 tlrt.options['mixing_ratio'] = 'co2 1120'
 # Run the RT with 4xCO2
-tdata2, tverb = tlrt.run(verbose=True, parse=True, parser=tdata.parser)
+tdata2, tverb = tlrt.run(verbose=True, parse=True)
 
 ###################################
 # Plot the height-resolved fluxes #
