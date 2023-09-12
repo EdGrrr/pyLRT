@@ -1,3 +1,4 @@
+from matplotlib import colorbar
 from pyLRT import RadTran, get_lrt_folder
 import matplotlib
 import matplotlib.pyplot as plt
@@ -31,31 +32,42 @@ tlrt.options['atm_z_grid'] = ' '.join([str(a) for a in np.arange(0, 100, 0.25)])
 tlrt.options['mixing_ratio'] = 'co2 410'
 
 # Run the thermal IR radiative transfer
-tdata, tverb = tlrt.run(verbose=True)
+tdata, tverb = tlrt.run(verbose=True, parse=True, dims=['lambda','pressure_out'], pressure_out=np.array(output_layers).astype('float'))
 
 ###################################################################
 # Plot the radaitive heating rates on a symmetric log colourscale #
 ###################################################################
-toplot = tdata[:, 2].reshape((-1, len(output_layers))).transpose()[::-1]
-plt.imshow(toplot, cmap=plt.get_cmap('RdBu_r'), 
-           norm=matplotlib.colors.SymLogNorm(linthresh=0.0001, vmin=-0.2, vmax=0.2,),
-           aspect='auto')
-wvl = tdata[:, 0]
 wvlticks = np.array([5000, 10000, 15000, 20000, 30000, 50000, 70000])
-wvlinterp = scipy.interpolate.interp1d(wvl, np.arange(len(wvl))/len(output_layers))
-plt.xticks(wvlinterp(wvlticks), wvlticks//1000)
-yticklocs = np.linspace(0, len(output_layers)-1, 5)
-plt.yticks(yticklocs, (np.array(output_layers)[yticklocs.astype('int')][::-1].astype('float')-10).astype('int'))
-plt.ylim(len(output_layers), 1)
-plt.xlim(*wvlinterp([4000, 70000]))
-plt.xlabel(r'Wavelength ($\mu$m)')
-plt.ylabel('Pressure (mb)')
 
-plt.colorbar(label='Heating rate')
+tdata.heat.plot(
+    x="wvl", y="pressure_out", yincrease=False,
+    norm=matplotlib.colors.SymLogNorm(linthresh=0.0001, vmin=-0.2, vmax=0.2,),
+    cmap="RdBu_r", cbar_kwargs={"label": "Heating rate"},
+    size=3, aspect=3, 
+)
+
+# scale the x-axis to match wavelength grid
+ax = plt.gca()
+wvlinterp = scipy.interpolate.interp1d(tdata.wvl, np.arange(len(tdata.wvl)), fill_value='extrapolate')
+invwvlinterp = scipy.interpolate.interp1d(np.arange(len(tdata.wvl)), tdata.wvl, fill_value='extrapolate')
+plt.gca().set_xscale(
+    "function", functions=(
+        lambda x: wvlinterp(np.ma.filled(x, np.nan)), 
+        lambda x: invwvlinterp(np.ma.filled(x, np.nan)),
+    )
+)
+
+# configure the x-axis
+plt.xlim(4000, 70000)
+plt.xticks(wvlticks, wvlticks//10000)
+
+
+plt.ylabel('Pressure (mb)')
+plt.xlabel(r'Wavelength ($\mu$m)')
 
 fig = plt.gcf()
-fig.set_size_inches(8, 4)
-fig.savefig('output/heating_rate.pdf', bbox_inches='tight')
+# fig.savefig('output/heating_rate.pdf', bbox_inches='tight')
+plt.show()
 fig.clf()
 del(fig)
 
@@ -64,42 +76,53 @@ del(fig)
 ########################################
 
 # Transmissivity ticks (for plots)
-trans_ticks = [[0, 0.5, 1], [0, 50, 100]]
+trans_ticks = np.array([0, 0.5, 1])
 
-plt.subplot(211)
-toplot = tdata[:, 2].reshape((-1, len(output_layers))).transpose()[::-1]
-plt.imshow(toplot, cmap=plt.get_cmap('RdBu_r'),
-           norm=matplotlib.colors.SymLogNorm(linthresh=0.0001, vmin=-0.2, vmax=0.2),
-           aspect='auto')
-wvl = tdata[:, 0]
-wvlticks = np.array([5000, 10000, 15000, 20000, 30000, 50000, 70000])
-wvlinterp = scipy.interpolate.interp1d(wvl, np.arange(len(wvl))/len(output_layers))
-plt.xticks(wvlinterp(wvlticks), [])
-yticklocs = np.linspace(0, len(output_layers)-1, 5)
-plt.yticks(yticklocs, (np.array(output_layers)[yticklocs.astype('int')][::-1].astype('float')-10).astype('int'))
-plt.ylim(len(output_layers), 1)
-plt.xlim(*wvlinterp([4000, 70000]))
+ax = plt.subplot(211)
+tdata.heat.plot(
+    x="wvl", y="pressure_out", yincrease=False,
+    norm=matplotlib.colors.SymLogNorm(linthresh=0.0001, vmin=-0.2, vmax=0.2,),
+    cmap="RdBu_r",
+    ax=ax, add_colorbar=False,
+)
+
+# scale the x-axis to match wavelength grid
+ax = plt.gca()
+plt.gca().set_xscale(
+    "function", functions=(
+        lambda x: wvlinterp(np.ma.filled(x, np.nan)), 
+        lambda x: invwvlinterp(np.ma.filled(x, np.nan)),
+    )
+)
+
+# configure the x-axis
+plt.xlim(4000, 70000)
+plt.xticks(wvlticks, [])
+
 plt.ylabel('Pressure (mb)')
 
 for v,var in enumerate([['co2', r'CO$_2$'],
                         ['o3', r'O$_3$'],
                         ['h2o', r'H$_2$O']]):
     plt.subplot(6, 1, v+4)
-    ext = 1-np.exp(-tverb['gases'][var[0]][:, :].sum(axis=-1))
+    ext = 1 - np.exp(-tverb['gases'][var[0]][:, :].sum(axis=-1))
     plt.fill_between(range(len(ext)),
                      ext, color='grey')
     plt.plot(range(len(ext)),
              ext, c='k', lw=0.5)
     plt.xticks(wvlinterp(wvlticks), [])
     plt.xlim(*wvlinterp([4000, 70000]))
-    plt.yticks(*trans_ticks)
+    plt.yticks(trans_ticks, trans_ticks*100)
     plt.ylim(0, 1)
     plt.xlabel(r'Wavelength ($\mu$m)')
     plt.ylabel(var[1])
 
+plt.xticks(wvlinterp(wvlticks), wvlticks//1000)
+
 fig = plt.gcf()
 fig.set_size_inches(8, 4)
-fig.savefig('output/heating_rate_species.pdf', bbox_inches='tight')
+# fig.savefig('output/heating_rate_species.pdf', bbox_inches='tight')
+plt.show()
 fig.clf()
 del(fig)
 

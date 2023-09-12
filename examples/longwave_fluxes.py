@@ -1,7 +1,7 @@
 '''Plots the vertically resolved longwave fluxes for a PI and 4xCO2 case'''
-from pyLRT import RadTran, get_lrt_folder
 import matplotlib.pyplot as plt
 import numpy as np
+from pyLRT import RadTran, get_lrt_folder
 
 LIBRADTRAN_FOLDER = get_lrt_folder()
 
@@ -17,19 +17,20 @@ tlrt.options['pressure_out'] = ' '.join(output_layers)
 tlrt.options['atm_z_grid'] = ' '.join([str(a) for a in np.arange(0, 100, 0.25)])
 tlrt.options['mixing_ratio'] = 'co2 280'
 # Run the RT
-tdata, tverb = tlrt.run(verbose=True)
+tdata, tverb = tlrt.run(verbose=True, parse=True, dims=['p'])
 
 tlrt.options['mixing_ratio'] = 'co2 1120'
 # Run the RT with 4xCO2
-tdata2, tverb = tlrt.run(verbose=True)
+# Implicitly uses the parser, because the same RadTran object is used
+tdata2, tverb = tlrt.run(verbose=True) 
 
 ###################################
 # Plot the height-resolved fluxes #
 ###################################
 
-plt.plot(tdata[:, 2], tdata[:, 0], label='Downwelling', c='b')
-plt.plot(tdata[:, 3], tdata[:, 0], label='Upwelling', c='r')
-plt.plot(tdata[:, 3]-tdata[:, 2], tdata[:, 0], label='Net', c='g')
+tdata.edn.plot(y='p', label='Downwelling', c='b')
+tdata.eup.plot(y='p', label='Upwelling', c='r')
+(tdata.eup - tdata.edn).plot(y='p', label='Net', c='g')
 plt.legend()
 
 plt.ylim(1000, 0)
@@ -39,20 +40,21 @@ plt.xlabel(r'Irradiance (Wm$^{-2}$)')
 
 fig = plt.gcf()
 fig.set_size_inches(8, 4)
-fig.savefig('output/longwave_fluxes.pdf', bbox_inches='tight')
+# fig.savefig('output/longwave_fluxes.pdf', bbox_inches='tight')
+plt.show()
 fig.clf()
-del(fig)
+del fig
 
 ###############################
 # Change in fluxes from 4xCO2 #
 ###############################
 
-plt.plot(tdata[:, 2], tdata[:, 0], label='Downwelling', c='b')
-plt.plot(tdata[:, 3], tdata[:, 0], label='Upwelling', c='r')
-plt.plot(tdata[:, 3]-tdata[:, 2], tdata[:, 0], label='Net', c='g')
-plt.plot(tdata2[:, 2], tdata2[:, 0], linestyle='--', c='b')
-plt.plot(tdata2[:, 3], tdata2[:, 0], linestyle='--', c='r')
-plt.plot(tdata2[:, 3]-tdata2[:, 2], tdata2[:, 0], linestyle='--', c='g')
+tdata.edn.plot(y='p', label='Downwelling', c='b')
+tdata.eup.plot(y='p', label='Upwelling', c='r')
+(tdata.eup - tdata.edn).plot(y='p', label='Net', c='g')
+tdata2.edn.plot(y='p', linestyle='--', c='b')
+tdata2.eup.plot(y='p', linestyle='--', c='r')
+(tdata2.eup - tdata2.edn).plot(y='p', linestyle='--', c='g')
 plt.legend()
 
 plt.ylim(1000, 0)
@@ -62,4 +64,5 @@ plt.xlabel(r'Irradiance (Wm$^{-2}$)')
 
 fig = plt.gcf()
 fig.set_size_inches(8, 4)
-fig.savefig('output/longwave_fluxes_4xco2.pdf', bbox_inches='tight')
+plt.show()
+# fig.savefig('output/longwave_fluxes_4xco2.pdf', bbox_inches='tight')
