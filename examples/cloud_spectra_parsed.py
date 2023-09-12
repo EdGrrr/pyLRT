@@ -57,13 +57,12 @@ tlrt_cld.cloud = {'z': np.array([4, 3.7]),
 # Run the RT
 print('Initial RT')
 sdata, sverb = slrt.run(verbose=True, parse=True, dims=['lambda','zout'], zout=[0, 5, 120])
-tdata, tverb = tlrt.run(verbose=True, parse=True, parser=slrt.parser)
+tdata, tverb = tlrt.run(verbose=True, parser=slrt.parser)
 print('Cloud RT')
-tcdata, tcverb = tlrt_cld.run(verbose=True, parse=True, parser=slrt.parser)
-scdata, scverb = slrt_cld.run(verbose=True, parse=True, parser=slrt.parser)
+tcdata, tcverb = tlrt_cld.run(verbose=True, parser=slrt.parser)
+scdata, scverb = slrt_cld.run(verbose=True, parser=slrt.parser)
 print('Done RT')
 
-# %%
 fig, ax = plt.subplots(figsize=(8, 4.3))
 (tdata.sel(zout=0)/np.pi).eup.plot(label='Surface (288K)', xincrease=False)
 (tdata.sel(zout=120)/np.pi).eup.plot(label='TOA (clear sky)')

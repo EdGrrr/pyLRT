@@ -21,7 +21,8 @@ tdata, tverb = tlrt.run(verbose=True, parse=True, dims=['p'])
 
 tlrt.options['mixing_ratio'] = 'co2 1120'
 # Run the RT with 4xCO2
-tdata2, tverb = tlrt.run(verbose=True, parse=True)
+# Implicitly uses the parser, because the same RadTran object is used
+tdata2, tverb = tlrt.run(verbose=True) 
 
 ###################################
 # Plot the height-resolved fluxes #

@@ -30,7 +30,7 @@ tlrt.options['sza'] = '0'
 # Run the RT
 print('Initial RT')
 sdata, sverb = slrt.run(verbose=True, parse=True, dims=['lambda','zout'], zout=[0, 5, 120])
-tdata, tverb = tlrt.run(verbose=True, parse=True, parser=slrt.parser)
+tdata, tverb = tlrt.run(verbose=True, parser=slrt.parser)
 print('Done RT')
 
 sdata.edir.sel(zout=120).plot(label='TOA Incoming')

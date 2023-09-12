@@ -25,7 +25,7 @@ class RadTran():
         self.cloud = None
         self.parser = output_parser 
 
-    def run(self, verbose=False, print_input=False, print_output=False, regrid=True, quiet=False, parse=False, **parse_kwargs):
+    def run(self, verbose=False, print_input=False, print_output=False, regrid=True, quiet=False, parse=None, **parse_kwargs):
         '''Run the radiative transfer code
         - verbose - retrieves the output from a verbose run, including atmospheric
                     structure and molecular absorption
@@ -39,7 +39,7 @@ class RadTran():
                      Default is ['lambda']. Note that 'lambda' is renamed to 'wvl'
                      in the output dataset.
             - **dim_specs - kwarg values for dimensions whose values are not
-                          in the output, e.g. including zout=[0,5,120].
+                          in the output, e.g. zout=[0,5,120].
         '''
         if self.cloud:  # Create cloud file
             tmpcloud = tempfile.NamedTemporaryFile(delete=False)
@@ -111,7 +111,7 @@ class RadTran():
             raise ValueError(error)
 
         output_data = np.genfromtxt(io.StringIO(process.stdout))
-        if parse:
+        if parse or (parse is None and (self.parser is not None or "parser" in parse_kwargs)):
             output_data = self._parse_output(output_data, **parse_kwargs)
 
         if print_output:
