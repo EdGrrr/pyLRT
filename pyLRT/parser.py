@@ -44,9 +44,11 @@ class OutputParser:
             self.dims[self.dims.index("lambda")] = "wvl"
         if "lambda" in output_cols:
             output_cols[output_cols.index("lambda")] = "wvl"
-            
+
+        # Reshape the output and extract the coordinates
         output, dim_values = self._unstack_dims(output, output_cols)
 
+        # Convert to an xarray dataset
         ds_output = xr.DataArray(output, coords={**dim_values, "variable":output_cols}, dims=["variable"]+self.dims)
         ds_output = ds_output.to_dataset("variable")
 
@@ -54,6 +56,7 @@ class OutputParser:
         if np.any(["uu" in col for col in ds_output.data_vars]):
             ds_output = _promote_uu_directions(ds_output, rt)
 
+        # Remove dimension-dependence where the values are uniform
         for data_var in ds_output.data_vars:
             ds_output[data_var] = _remove_dims(ds_output[data_var])
 
@@ -91,7 +94,6 @@ class OutputParser:
             if dim not in output_cols: # are dim values in output?
                 print(f"Warning: dimension {dim} values are not in output; cannot check for consistency.")
                 continue
-
             # check coordinates don't vary along non-dim axis
             dim_index = np.argwhere(np.array(output_cols) == dim)[0, 0]
             i_dim_axis = np.argwhere(np.array(self.dims) == dim)[0, 0]
