@@ -120,16 +120,20 @@ def _skiplines(f, n):
         _ = f.readline()
 
 
-def _skiplines_title(f, n, t):
+def _skiplines_title(f, n, t, ignore_pattern=None):
     '''Skip n lines from file f. Return the title on line t'''
-    for i in range(n):
+    i = 0
+    while i<n:
         if i == t:
             title = [a.strip() for a in f.readline().strip().split('|')]
-        _ = f.readline()
+        line = f.readline()
+        if ignore_pattern and (line.strip().startswith(ignore_pattern)):
+            continue
+        i += 1
     return title
 
 
-def _match_table(f, start_idstr, nheader_rows, header_row=None):
+def _match_table(f, start_idstr, nheader_rows, header_row=None, ignore_pattern=None):
     '''Get the data from an individual 2D table. 
     start_idstr - string to locate table
     nheader_rows - number of rows to skip before the data'''
@@ -137,7 +141,7 @@ def _match_table(f, start_idstr, nheader_rows, header_row=None):
         line = f.readline()
         if line.startswith(start_idstr):
             break
-    title = _skiplines_title(f, nheader_rows, header_row)
+    title = _skiplines_title(f, nheader_rows, header_row, ignore_pattern=ignore_pattern)
     profiles = []
     while True:
         line = f.readline()
@@ -156,7 +160,7 @@ def _read_table(f, start_idstr, labels, wavelengths, regrid=False):
     optprop = []
     num_wvl = len(wavelengths['wvl'])
     for wv in range(num_wvl):
-        temp = _match_table(f, start_idstr, 4, 2)
+        temp = _match_table(f, start_idstr, 3, 2)
         optprop.append(temp[1])
         # Could potentially read variable names from the table in future
         #optproplabels = temp[0]
@@ -197,7 +201,7 @@ def _get_wavelengths(f):
 
 
 def _read_verbose(f, regrid=False):
-    '''Readin the uotput from 'verbose' to a set of xarrays'''
+    '''Readin the output from 'verbose' to a set of xarrays'''
     try:
         wavelengths = _get_wavelengths(f)
     except:
@@ -206,7 +210,8 @@ def _read_verbose(f, regrid=False):
             print(f.readline())
         return None
 
-    profiles = _match_table(f, '*** Scaling profiles', 4, 1)
+    # The ignore pattern ensures that rows that just describe the scaling are skipped
+    profiles = _match_table(f, '*** Scaling profiles', 3, 1, ignore_pattern='...')
     proflabels = ['lc', 'z', 'p', 'T', 'air', 'o3',
                   'o2', 'h2o', 'co2', 'no2', 'o4']
     profiles = xr.Dataset(
