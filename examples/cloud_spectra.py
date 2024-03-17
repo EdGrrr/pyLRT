@@ -6,6 +6,22 @@ import numpy as np
 import scipy
 import scipy.interpolate
 
+def planck_wvl_plot(t, wvl, add_text=True, ax=None, unit=1e-9, **kwargs):
+    """Plot the Planck function for a given temperature and wavelength range."""
+    if ax is None:
+        ax = plt.gca()
+    radiances = 100 * (wvl*unit)**2 * planck_function(t, wavelength=wvl*unit)
+    handle = ax.plot(wvl, radiances, **kwargs)
+    
+    if add_text:
+        label_wvl = wvl[np.array(radiances).argmax()] if isinstance(add_text, bool) else add_text
+        ax.text(
+            label_wvl, 
+            radiances.max(), 
+            str(t)+'K',)
+    
+    return handle
+
 LIBRADTRAN_FOLDER = get_lrt_folder()
 
 slrt = RadTran(LIBRADTRAN_FOLDER)
@@ -40,49 +56,28 @@ tlrt_cld.cloud = {'z': np.array([4, 3.7]),
 
 # Run the RT
 print('Initial RT')
-sdata, sverb = slrt.run(verbose=True)
-tdata, tverb = tlrt.run(verbose=True)
+sdata, sverb = slrt.run(verbose=True, parse=True, dims=['lambda','zout'], zout=[0, 5, 120])
+tdata, tverb = tlrt.run(verbose=True, parser=slrt.parser)
 print('Cloud RT')
-scdata, scverb = slrt_cld.run(verbose=True)
-tcdata, tcverb = tlrt_cld.run(verbose=True)
+tcdata, tcverb = tlrt_cld.run(verbose=True, parser=slrt.parser)
+scdata, scverb = slrt_cld.run(verbose=True, parser=slrt.parser)
 print('Done RT')
 
-tclearsurf = scipy.interpolate.interp1d(np.log(tdata[::3, 0]), tdata[::3, 2])
-tcleartoa = scipy.interpolate.interp1d(np.log(tdata[2::3, 0]), tdata[2::3, 2])
-tcldtoa = scipy.interpolate.interp1d(np.log(tcdata[2::3, 0]), tcdata[2::3, 2])
+fig, ax = plt.subplots(figsize=(8, 4.3))
+(tdata.sel(zout=0)/np.pi).eup.plot(label='Surface (288K)', xincrease=False)
+(tdata.sel(zout=120)/np.pi).eup.plot(label='TOA (clear sky)')
+(tcdata.sel(zout=120)/np.pi).eup.plot(label='TOA (cloudy)')
 
-xtlocs = np.linspace(np.log(tdata[0, 0]), np.log(tdata[-1, 0]), 1000)
-
-wvlticks = [(list(range(200, 1000, 100))+
-             list(range(1000, 10000, 1000))+
-             list(range(10000, 71000, 10000))),
-            (['0.2']+['']*7+
-             ['1']+['']*8+
-             ['10']+['']*5+['70'])]
-
-plt.plot(xtlocs,
-         tclearsurf(xtlocs)/np.pi, label='Surface (288K)')
-plt.plot(xtlocs,
-         tcleartoa(xtlocs)/np.pi, label='TOA (clear sky)')
-plt.plot(xtlocs,
-         tcldtoa(xtlocs)/np.pi, label='TOA (cloudy)')
+plt.xscale('log')
 for t in [300, 275, 250, 225, 200, 175]:
-    plt.plot(xtlocs, 100*np.exp(2*xtlocs)*1e-18*
-             planck_function(
-                 t,
-                 wavelength=np.exp(xtlocs)*1e-9), c='k', lw=0.5, zorder=-1)
-    plwvl = wvlticks[0][-6]
-    plt.text(np.log(plwvl), 100*plwvl**2*1e-18*
-             planck_function(
-                 t,
-                 wavelength=plwvl*1e-9), str(t)+'K')
+    planck_wvl_plot(t, tdata.wvl, unit=1e-9, add_text=True, c='k', lw=0.5, zorder=-1)
 
-plt.xticks(np.log(wvlticks[0]), wvlticks[1])
-plt.xlim(np.log(70000), np.log(4000))
+ax.xaxis.set_minor_formatter(lambda x,_: f"{x/1e3:.0f}")
+ax.xaxis.set_major_formatter(lambda x,_: f"{x/1e3:.0f}")
+plt.tick_params(which='minor', labelsize=8)
 plt.xlabel(r'Wavelength ($\mu m$)')
 plt.ylabel(r'Spectral radiance (Wm$^{-2}$ sr$^{-1}$cm)')
 plt.legend()
 
-fig = plt.gcf()
-fig.set_size_inches(8, 4.3)
-fig.savefig('output/cloud_temp.pdf', bbox_inches='tight')
+plt.show()
+# fig.savefig('output/cloud_temp.pdf', bbox_inches='tight')
