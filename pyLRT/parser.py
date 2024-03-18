@@ -6,7 +6,8 @@ import numpy as np
 
 default_output = {
     "disort": "lambda edir edn eup uavgdir uavgdn uavgup",
-    "twostr": "lambda edir edn eup uavg"
+    "twostr": "lambda edir edn eup uavg",
+    "twomaxrnd3c": "lambda edir edn eup uavg"
 }
 
 class OutputParser:
