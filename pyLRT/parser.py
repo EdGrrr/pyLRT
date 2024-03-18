@@ -57,8 +57,8 @@ class OutputParser:
             ds_output = _promote_uu_directions(ds_output, rt)
 
         # Remove dimension-dependence where the values are uniform
-        for data_var in ds_output.data_vars:
-            ds_output[data_var] = _remove_dims(ds_output[data_var])
+        # for data_var in ds_output.data_vars:
+        #     ds_output[data_var] = _remove_dims(ds_output[data_var])
 
         return ds_output
 

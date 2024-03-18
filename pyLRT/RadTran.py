@@ -134,8 +134,6 @@ class RadTran():
             self.parser = parser
         elif self.parser is None:
             self.parser = OutputParser(**parse_kwargs)
-        elif self.parser is not None and (parser is not None or parse_kwargs != {}):
-            raise ValueError("Parser already set. Cannot set again.")
         elif parser is not None and parse_kwargs != {}:
             raise ValueError("Cannot simultaneously pass parser and parse_kwargs.")
         
