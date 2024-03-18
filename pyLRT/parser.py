@@ -5,7 +5,8 @@ import xarray as xr
 import numpy as np
 
 default_output = {
-    "disort": "lambda edir edn eup uavgdir, uavgdn, uavgup",
+    "disort": "lambda edir edn eup uavgdir uavgdn uavgup",
+    "twostr": "lambda edir edn eup uavg"
 }
 
 class OutputParser:
@@ -38,12 +39,27 @@ class OutputParser:
             The output of the libRadtran run as an xarray dataset
         """
 
-
         output_cols = _get_columns(rt)# avoid calling wavelength "lambda", as it is a reserved word in python
-        if "lambda" in self.dims:
-            self.dims[self.dims.index("lambda")] = "wvl"
-        if "lambda" in output_cols:
-            output_cols[output_cols.index("lambda")] = "wvl"
+        for wvl_rename_var in ["lambda", "wavelength"]:
+            if wvl_rename_var in self.dims:
+                self.dims[self.dims.index(wvl_rename_var)] = "wvl"
+            if wvl_rename_var in output_cols:
+                output_cols[output_cols.index(wvl_rename_var)] = "wvl"
+
+        # Check that the output levels match the uvspec call
+        if "zout" in rt.options.keys():
+            if "zout" not in self.dims:
+                self.dims.append("zout")
+            self.dim_specs["zout"] = np.array(rt.options["zout"].split(' '))
+        else:
+            try:
+                self.dims.remove('zout')
+            except ValueError:
+                pass
+            try:
+                self.dim_specs.pop('zout')
+            except KeyError:
+                pass
 
         # Reshape the output and extract the coordinates
         output, dim_values = self._unstack_dims(output, output_cols)
@@ -92,7 +108,9 @@ class OutputParser:
         # check the reshape is correct
         for dim in self.dims:
             if dim not in output_cols: # are dim values in output?
-                print(f"Warning: dimension {dim} values are not in output; cannot check for consistency.")
+                if dim != "zout":
+                    # zout is a special case and is determined from the rt properties
+                    print(f"Warning: dimension {dim} values are not in output; cannot check for consistency.")
                 continue
             # check coordinates don't vary along non-dim axis
             dim_index = np.argwhere(np.array(output_cols) == dim)[0, 0]
