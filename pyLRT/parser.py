@@ -11,11 +11,11 @@ default_output = {
 }
 
 class OutputParser:
-    
+
     def __init__(self, dims=["lambda"], **dim_specs):
         self.dims = dims
         self.dim_specs = dim_specs
-    
+
 
     def parse_output(self, output: ArrayLike, rt:RadTran):
         """
@@ -33,7 +33,7 @@ class OutputParser:
         dim_specs : dict, optional
             The values of the dimensions to unstack the output along who are
             not included in the output of the libRadtran run, by default {}
-        
+
         Returns
         -------
         xr.Dataset
@@ -67,6 +67,12 @@ class OutputParser:
 
         # Convert to an xarray dataset
         ds_output = xr.DataArray(output, coords={**dim_values, "variable":output_cols}, dims=["variable"]+self.dims)
+        
+        # modern xarray cannot handle the case where the dimensions are also in the data_vars
+        for dim in self.dims:
+            if dim in output_cols:
+                ds_output = ds_output.rename({dim: f"{dim}_coord"})
+
         ds_output = ds_output.to_dataset("variable")
 
         # Check for directional quantities (radiances)
@@ -80,11 +86,11 @@ class OutputParser:
         return ds_output
 
     def _unstack_dims(self, output, output_cols):
-        """Reshape the output of a libRadtran run and extract the 
+        """Reshape the output of a libRadtran run and extract the
         coordiantes for each dimension"""
 
         # Transpose the output such that the first index is the data_var
-        output = np.array(output).T 
+        output = np.array(output).T
 
         # Identify the coordinates for each dim.
         dim_values = {}
@@ -105,7 +111,7 @@ class OutputParser:
 
         # reshape the output
         output = output.reshape((-1, *[len(np.unique(dim_values[dim])) for dim in self.dims]))
-        
+
         # check the reshape is correct
         for dim in self.dims:
             if dim not in output_cols: # are dim values in output?
@@ -182,7 +188,7 @@ def _get_columns(rt: RadTran):
 
         # get the index of uu
         uu_index = np.argwhere(np.array(output_cols) == "uu")[0, 0]
-        
+
         # generate column names
         uu_cols = [f"uu(umu({i_umu}), phi({i_phi}))" for i_umu in range(n_umu) for i_phi in range(n_phi)]
         output_cols = output_cols[:uu_index] + uu_cols + output_cols[uu_index+1:]
