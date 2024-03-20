@@ -72,8 +72,8 @@ def uvspec_test_function(uvspec_testdata):
         output_filename = test_filename.replace('.INP', '.OUT')
     testdata = parse_outputfile(lrt.parser, output_filename, rt=lrt)
 
-    abs_error = ((sdata-testdata)).apply(np.abs)
-    rel_error_abs = (abs_error/testdata).apply(np.abs)
+    abs_error = ((sdata-testdata)).map(np.abs)
+    rel_error_abs = (abs_error/testdata).map(np.abs)
 
     rel_error_flag = (((rel_error_abs>rtol)*(abs_error>atol)).sum()>0)
 
