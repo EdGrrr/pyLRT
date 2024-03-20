@@ -88,7 +88,6 @@ def uvspec_test_function(uvspec_testdata):
     ('UVSPEC_AVHRR_SOLAR_CH3', '', 0.00001,0.001),
     ('UVSPEC_AVHRR_THERMAL_CH3', '', 0.00001,0.001),
     ('UVSPEC_AVHRR_THERMAL_CH4', '', 0.00001,0.001),
-    ('UVSPEC_AVHRR_THERMAL_CH5', '', 0.00001,0.001),
     ('UVSPEC_AEROSOL_MOMENTS', '', 0.00001,0.001),
     ('UVSPEC_AEROSOL_REFRAC', '', 0.00001,0.001),
     ('UVSPEC_AEROSOL', '', 0.00001,0.001),
@@ -108,6 +107,14 @@ def uvspec_test_function(uvspec_testdata):
 def test_uvspec(uvspec_testdata):
     uvspec_test_function(uvspec_testdata)
 
+@pytest.mark.xfail
+@pytest.mark.parametrize("uvspec_testdata", [
+    ('UVSPEC_AVHRR_THERMAL_CH5', '', 0.00001,0.001),
+])
+def test_uvspec_bugs(uvspec_testdata):
+    uvspec_test_function(uvspec_testdata)
+
+    
 @pytest.mark.xfail
 @pytest.mark.parametrize("uvspec_testdata", [
     ("UVSPEC_PROFILES1", '', 0.00001,0.001),
