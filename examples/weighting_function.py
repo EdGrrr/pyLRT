@@ -1,7 +1,6 @@
 '''Plots and example weighting function'''
 import numpy as np
 import matplotlib.pyplot as plt
-import misc
 
 pressure = np.exp(np.linspace(np.log(1000), np.log(5), 300))
 
@@ -18,7 +17,7 @@ T= np.exp(-tau)
 plt.plot(T, Z, label='Transmissivity')
 plt.plot(pressure/1000, Z, label='Pressure (atm)')
 dTdZ = np.diff(T)/np.diff(Z)
-plt.plot(dTdZ/np.max(dTdZ), misc.stats.lin_av(Z), label='Weighting fn')
+plt.plot(dTdZ/np.max(dTdZ), (Z[:-1] + Z[1:])/2, label='Weighting fn')
 plt.axhline(15.7, lw=0.5, c='k')
 
 #plt.plot(0.9*(T*pressure/1000)/np.max(T*pressure/1000), Z)
@@ -31,5 +30,3 @@ plt.legend()
 fig = plt.gcf()
 fig.set_size_inches(4,4)
 fig.savefig('output/weighting_fn_co2.pdf', bbox_inches='tight')
-
-

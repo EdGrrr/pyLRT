@@ -29,12 +29,12 @@ tlrt.options['sza'] = '0'
 
 # Run the RT
 print('Initial RT')
-sdata, sverb = slrt.run(verbose=True, parse=True, dims=['lambda','zout'], zout=[0, 5, 120])
-tdata, tverb = tlrt.run(verbose=True, parser=slrt.parser)
+sdata = slrt.run(parse=True)
+tdata = tlrt.run(parse=True)
 print('Done RT')
 
-sdata.edir.sel(zout=120).plot(label='TOA Incoming')
-sdata.edir.sel(zout=0).plot(label='Surface')
+sdata.edir.sel(zout='TOA').plot(label='TOA Incoming')
+sdata.edir.sel(zout='0').plot(label='Surface')
 
 plt.yticks([], [])
 plt.xlabel(r'Wavelength ($\mu$m)')
@@ -45,13 +45,12 @@ fig = plt.gcf()
 fig.set_size_inches((8, 3))
 # fig.savefig('output/solar_spectrum.png')
 
-(1000*tdata).eup.sel(zout=0).plot(label='Black surface emission')
-(1000*tdata).eup.sel(zout=120).plot(label='TOA Outgoing')
+(1000*tdata).eup.sel(zout='0').plot(label='Black surface emission')
+(1000*tdata).eup.sel(zout='TOA').plot(label='TOA Outgoing')
 plt.legend()
 plt.xscale('log')
-fig = plt.gcf()
-fig.set_size_inches((8, 3))
 plt.show()
+fig.savefig('output/combined_spectrum_toa.png')
 fig.clf()
 
 
@@ -60,8 +59,8 @@ pdata = planck_function(5800, wavelength=sdata.wvl*1e-9) # Solar radiance
 pdata = 1e-6*pdata*np.pi*(6.9e5/1.5e8)**2
 
 plt.plot(sdata.wvl, pdata, label='5800K')
-sdata.edir.sel(zout=120).plot(label='TOA Incoming')
-sdata.edir.sel(zout=0).plot(label='Surface')
+sdata.edir.sel(zout='TOA').plot(label='TOA Incoming')
+sdata.edir.sel(zout='0').plot(label='Surface')
 plt.xscale('log')
 plt.xlabel(r'Wavelength ($\mu$m)')
 plt.ylabel(r'Spectral irradiance (Wm$^{-2}$$\mu$m$^{-1}$)')

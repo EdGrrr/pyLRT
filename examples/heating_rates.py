@@ -39,11 +39,13 @@ tdata, tverb = tlrt.run(verbose=True, parse=True, dims=['lambda','pressure_out']
 ###################################################################
 wvlticks = np.array([5000, 10000, 15000, 20000, 30000, 50000, 70000])
 
+# tdata["wvl"] = tdata.wvl.isel(pressure_out=0, drop=True)
+# tdata = tdata.swap_dims({"wvl":"wvl"})
 tdata.heat.plot(
     x="wvl", y="pressure_out", yincrease=False,
     norm=matplotlib.colors.SymLogNorm(linthresh=0.0001, vmin=-0.2, vmax=0.2,),
     cmap="RdBu_r", cbar_kwargs={"label": "Heating rate"},
-    size=3, aspect=3, 
+    size=3, aspect=3,
 )
 
 # scale the x-axis to match wavelength grid
@@ -52,7 +54,7 @@ wvlinterp = scipy.interpolate.interp1d(tdata.wvl, np.arange(len(tdata.wvl)), fil
 invwvlinterp = scipy.interpolate.interp1d(np.arange(len(tdata.wvl)), tdata.wvl, fill_value='extrapolate')
 plt.gca().set_xscale(
     "function", functions=(
-        lambda x: wvlinterp(np.ma.filled(x, np.nan)), 
+        lambda x: wvlinterp(np.ma.filled(x, np.nan)),
         lambda x: invwvlinterp(np.ma.filled(x, np.nan)),
     )
 )
@@ -79,6 +81,7 @@ del(fig)
 trans_ticks = np.array([0, 0.5, 1])
 
 ax = plt.subplot(211)
+breakpoint()
 tdata.heat.plot(
     x="wvl", y="pressure_out", yincrease=False,
     norm=matplotlib.colors.SymLogNorm(linthresh=0.0001, vmin=-0.2, vmax=0.2,),
@@ -90,7 +93,7 @@ tdata.heat.plot(
 ax = plt.gca()
 plt.gca().set_xscale(
     "function", functions=(
-        lambda x: wvlinterp(np.ma.filled(x, np.nan)), 
+        lambda x: wvlinterp(np.ma.filled(x, np.nan)),
         lambda x: invwvlinterp(np.ma.filled(x, np.nan)),
     )
 )
@@ -125,4 +128,3 @@ fig.set_size_inches(8, 4)
 plt.show()
 fig.clf()
 del(fig)
-
